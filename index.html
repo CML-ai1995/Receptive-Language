@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Michigan Shipwrecks Reading Quiz</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --secondary: #0284c7;
+      --bg: #f0f9ff;
+      --card-bg: #ffffff;
+      --text: #1e293b;
+      --success: #16a34a;
+      --error: #dc2626;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 16px;
+    }
+
+    .quiz-container {
+      max-width: 750px;
+      margin: 0 auto;
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      color: var(--primary);
+      text-align: center;
+      margin-bottom: 8px;
+      font-size: 1.6rem;
+    }
+
+    .progress {
+      text-align: center;
+      font-weight: 600;
+      color: var(--secondary);
+      margin-bottom: 20px;
+    }
+
+    .passage-card {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .passage-img {
+      width: 100%;
+      max-height: 320px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin-bottom: 16px;
+    }
+
+    .passage-text {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      background: #f8fafc;
+      padding: 16px;
+      border-left: 4px solid var(--secondary);
+      border-radius: 4px;
+      margin-bottom: 20px;
+    }
+
+    .question-box {
+      margin-bottom: 20px;
+      padding: 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+    }
+
+    .question-title {
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .option-btn {
+      background: #fff;
+      border: 1px solid #cbd5e1;
+      padding: 10px 14px;
+      border-radius: 6px;
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: all 0.2s;
+    }
+
+    .option-btn:hover {
+      background: #f1f5f9;
+      border-color: var(--secondary);
+    }
+
+    .option-btn.correct {
+      background: #dcfce7 !important;
+      border-color: var(--success) !important;
+      color: #14532d;
+      font-weight: 600;
+    }
+
+    .option-btn.wrong {
+      background: #fee2e2 !important;
+      border-color: var(--error) !important;
+      color: #7f1d1d;
+    }
+
+    .text-input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-size: 0.95rem;
+      box-sizing: border-box;
+      margin-bottom: 8px;
+    }
+
+    .submit-text-btn {
+      background: var(--secondary);
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .feedback {
+      margin-top: 8px;
+      font-weight: 600;
+      font-size: 0.9rem;
+    }
+
+    .nav-btns {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 24px;
+    }
+
+    .nav-btn {
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 1rem;
+    }
+
+    .nav-btn:disabled {
+      background: #94a3b8;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+
+<div class="quiz-container">
+  <h1>Michigan Shipwrecks: Reading & Comprehension</h1>
+  <div class="progress" id="progress">Passage 1 of 10</div>
+
+  <div id="quiz-content"></div>
+
+  <div class="nav-btns">
+    <button class="nav-btn" id="prev-btn" onclick="changePassage(-1)" disabled>Previous</button>
+    <button class="nav-btn" id="next-btn" onclick="changePassage(1)">Next Passage</button>
+  </div>
+</div>
+
+<script src="questions.js"></script>
+<script>
+  let currentPassage = 0;
+  const userScores = {};
+
+  function renderPassage() {
+    const data = passagesData[currentPassage];
+    document.getElementById('progress').innerText = `Passage ${currentPassage + 1} of ${passagesData.length}`;
+    
+    let html = `
+      <div class="passage-card">
+        <h2>${data.title}</h2>
+        <img class="passage-img" src="${data.image}" alt="${data.title}" />
+        <div class="passage-text">${data.text}</div>
+      </div>
+      <h3>Comprehension Questions</h3>
+    `;
+
+    data.questions.forEach((q, qIdx) => {
+      html += `<div class="question-box">
+        <div class="question-title">${qIdx + 1}. ${q.question}</div>`;
+
+      if (q.type === "mc") {
+        html += `<div class="options">`;
+        q.options.forEach((opt, oIdx) => {
+          html += `<button class="option-btn" id="btn-${currentPassage}-${qIdx}-${oIdx}" onclick="checkMC(${qIdx}, ${oIdx})">${opt}</button>`;
+        });
+        html += `</div>`;
+      } else if (q.type === "text") {
+        html += `
+          <input type="text" class="text-input" id="input-${currentPassage}-${qIdx}" placeholder="Type your answer here..." />
+          <button class="submit-text-btn" onclick="checkText(${qIdx})">Submit Answer</button>
+        `;
+      }
+
+      html += `<div class="feedback" id="feedback-${currentPassage}-${qIdx}"></div></div>`;
+    });
+
+    document.getElementById('quiz-content').innerHTML = html;
+    
+    document.getElementById('prev-btn').disabled = currentPassage === 0;
+    document.getElementById('next-btn').innerText = currentPassage === passagesData.length - 1 ? "Finish Quiz" : "Next Passage";
+  }
+
+  function checkMC(qIdx, oIdx) {
+    const q = passagesData[currentPassage].questions[qIdx];
+    const feedbackEl = document.getElementById(`feedback-${currentPassage}-${qIdx}`);
+    
+    q.options.forEach((_, idx) => {
+      const btn = document.getElementById(`btn-${currentPassage}-${qIdx}-${idx}`);
+      btn.classList.remove('correct', 'wrong');
+      btn.disabled = true;
+    });
+
+    const selectedBtn = document.getElementById(`btn-${currentPassage}-${qIdx}-${oIdx}`);
+    if (oIdx === q.correct) {
+      selectedBtn.classList.add('correct');
+      feedbackEl.style.color = 'var(--success)';
+      feedbackEl.innerText = 'Correct!';
+    } else {
+      selectedBtn.classList.add('wrong');
+      document.getElementById(`btn-${currentPassage}-${qIdx}-${q.correct}`).classList.add('correct');
+      feedbackEl.style.color = 'var(--error)';
+      feedbackEl.innerText = 'Incorrect. The correct option is highlighted in green.';
+    }
+  }
+
+  function checkText(qIdx) {
+    const q = passagesData[currentPassage].questions[qIdx];
+    const inputVal = document.getElementById(`input-${currentPassage}-${qIdx}`).value.trim().toLowerCase();
+    const feedbackEl = document.getElementById(`feedback-${currentPassage}-${qIdx}`);
+
+    if (q.accepted.some(ans => inputVal.includes(ans.toLowerCase()))) {
+      feedbackEl.style.color = 'var(--success)';
+      feedbackEl.innerText = 'Great job! Your answer matches key details.';
+    } else {
+      feedbackEl.style.color = 'var(--error)';
+      feedbackEl.innerText = `Sample answer: ${q.sampleAnswer}`;
+    }
+  }
+
+  function changePassage(dir) {
+    currentPassage += dir;
+    if (currentPassage >= passagesData.length) {
+      document.getElementById('quiz-content').innerHTML = `
+        <div style="text-align:center; padding: 40px 0;">
+          <h2>Congratulations!</h2>
+          <p>You have completed all 10 Michigan Shipwreck reading passages and quizzes.</p>
+        </div>
+      `;
+      document.getElementById('prev-btn').style.display = 'none';
+      document.getElementById('next-btn').style.display = 'none';
+      document.getElementById('progress').innerText = 'Complete!';
+    } else {
+      renderPassage();
+      window.scrollTo(0, 0);
+    }
+  }
+
+  window.onload = renderPassage;
+</script>
+</body>
+</html>
